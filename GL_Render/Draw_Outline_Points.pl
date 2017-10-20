@@ -58,6 +58,7 @@ sub display
         conic_to => sub { 
                 glColor3f(0.5, 0.5, 1.0);
                 glVertex3f( $_[0], $_[1], 0.0); 
+                glColor3f(1.0, 1.0, 0.3);
                 glVertex3f( $_[2], $_[3], 0.0); 
             },
         cubic_to => sub { glColor3f(1.0, 1.0, 1.0); glVertex3f( $_[0], $_[1], 0.0) }

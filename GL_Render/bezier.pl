@@ -1,6 +1,8 @@
 =info
-    提取Outlines(轮廓信息)
+    逐点绘制字符点阵
+    如果开启 GLUT_MULTISAMPLE，会造成字符走样
 =cut
+
 use Encode;
 use Data::Dump qw/dump/;
 use Data::Dumper;
@@ -18,26 +20,7 @@ BEGIN
     our $WinID;
     our $HEIGHT = 500;
     our $WIDTH  = 500;
-
-    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'Q', 100);
-    my $dpi = 100;
-
-    our $face = Font::FreeType->new->face($filename);
-    $face->set_char_size($size, $size, $dpi, $dpi);
-
-    our $glyph = $face->glyph_from_char($char);
-    die "No glyph for character '$char'.\n" if (! $glyph);
-
-    $glyph->outline_decompose(
-        move_to  => sub { printf "move_to: %.3f, %.3f\n", @_ },
-        line_to  => sub { printf "line_to: %.3f, %.3f\n", @_ },
-        conic_to => sub { printf "conic_to: %.3f, %.3f Ctrl: %.3f, %.3f\n", @_ },
-        cubic_to => sub { printf "cubic_to: %.3f, %.3f %.3f, %.3f  %.3f, %.3f\n", @_ },
-    );
-
-    print $glyph->svg_path();
 }
-
 
 &main();
 
@@ -66,39 +49,43 @@ sub display
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     #glRectf(0.0,0.0,100.0,100.0);
 
-    #random
-    #$glyph = $face->glyph_from_char( ('A'..'Z')[rand(26)] ) if ($iter % 20 == 1);
+    my $parts;
+    my @pta = (-100.0, 0.0  );
+    my @ptb = (   0.0, 100.0);
+    my @ptc = ( 100.0, 0.0  );
 
-    my $px, $py, $parts, $t;
-    $parts = 5.0;
+    glPushMatrix();
+    glRotatef($rx, 1.0, 0.0, 0.0);
+    glRotatef($ry, 0.0, 1.0, 0.0);
+    glRotatef($rz, 0.0, 0.0, 1.0);
 
+    $parts = 20.0;
     glColor3f(1.0, 1.0, 1.0);
-    $glyph->outline_decompose(
-        move_to  => sub { ($px, $py) = (@_); },
-        line_to  => sub {
-            glColor3f(0.0, 1.0, 0.0);
-            glBegin(GL_LINES);
-                glVertex3f( $px, $py, 0.0);
-                glVertex3f( $_[0], $_[1], 0.0);
-            glEnd();
-            ($px, $py) = (@_);
-            },
-        conic_to => sub 
-            {
-                glColor3f(0.5, 0.5, 1.0);
-                glBegin(GL_LINE_STRIP);
-                for (my $step = 0.0; $step <= $parts; $step+=1.0)
-                {
-                    glVertex3f( pointOnQuadBezier(  $px, $py, $_[2], $_[3], $_[0], $_[1], $step/$parts ), 0.0);
-                }
-                glEnd();
-            },
-        cubic_to => sub {
-            glColor3f(1.0, 1.0, 1.0);
-            glVertex3f( $_[0], $_[1], 0.0);
+    glBegin(GL_POINTS);
+    for (my $step = 0.0; $step <= $parts; $step+=1.0)
+    {
+        my $t = $step/$parts;
+        ($x1, $y1) = pointOnLine( @pta, @ptb, $t );
+        glVertex3f( $x1, $y1, 0.0 );
+        ($x2, $y2) = pointOnLine( @ptb, @ptc, $t );
+        glVertex3f( $x2, $y2, 0.0 );
+        ($x, $y) = pointOnLine( $x1, $y1, $x2, $y2, $t );
+        glVertex3f( $x, $y, 0.0 );
+    }
+    glEnd();
 
-            }
-    );
+    glTranslatef(0.0, -10.0, 0.0);
+    $parts = 5.0;
+    glBegin(GL_LINE_STRIP);
+    for (my $step = 0.0; $step <= $parts; $step+=1.0)
+    {
+        my $t = $step/$parts;
+        ($x, $y) = pointOnQuadBezier( @pta, @ptb, @ptc, $t );
+        glVertex3f( $x, $y, 0.0 );
+    }
+    glEnd();
+
+    glPopMatrix();
 
     $iter++;
     glutSwapBuffers();
@@ -113,13 +100,12 @@ sub idle
 sub init
 {
     glClearColor(0.0, 0.0, 0.0, 0.5);
-    glPointSize(4.0);
+    glPointSize(1.0);
     glLineWidth(1.0);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
-    # glEnable(GL_POINT_SMOOTH);
+    glDisable(GL_POINT_SMOOTH);
     glEnable(GL_LINE_SMOOTH);
-    glShadeModel(GL_FLAT);
 }
 
 sub reshape 
@@ -145,7 +131,13 @@ sub hitkey
     our $WinID;
     my $k = lc(chr(shift));
 
-    if ( $k eq 'q') { glutDestroyWindow( $WinID ) }
+    if ( $k eq 'q') { quit() }
+    if ( $k eq 'w') { $rx+=10.0 }
+    if ( $k eq 's') { $rx-=10.0 }
+    if ( $k eq 'a') { $ry-=10.0 }
+    if ( $k eq 'd') { $ry+=10.0 }
+    if ( $k eq 'j') { $rz+=10.0 }
+    if ( $k eq 'k') { $rz-=10.0 }
 }
 
 sub quit
@@ -157,7 +149,7 @@ sub quit
 sub main
 {
     glutInit();
-    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH | GLUT_MULTISAMPLE  );
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH );
     glutInitWindowSize($WIDTH, $HEIGHT);
     glutInitWindowPosition(100, 100);
     our $WinID = glutCreateWindow("Display");
