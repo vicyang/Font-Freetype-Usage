@@ -1,5 +1,5 @@
 ### Font::Freetype  
-关于Font::Freetype 模块的安装和使用  
+关于Font::Freetype 模块的安装和代码示例  
 
 * #### 安装
   环境 Win7, Strawberry Perl V5.24 Portable  
