@@ -5,20 +5,119 @@
 use Data::Dump qw/dump/;
 use Data::Dumper;
 use Font::FreeType;
+use feature 'state';
+use IO::Handle;
 
-my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'A', 20);
-my $dpi = 100;
+use OpenGL qw/ :all /;
+use OpenGL::Config;
 
-my $face = Font::FreeType->new->face($filename);
-$face->set_char_size($size, $size, $dpi, $dpi);
+STDOUT->autoflush(1);
 
-$char = ord($char);
-my $glyph = $face->glyph_from_char_code($char);
-die "No glyph for character '$char'.\n" if (! $glyph);
+BEGIN
+{
+    our $WinID;
+    our $HEIGHT = 500;
+    our $WIDTH  = 500;
 
-$glyph->outline_decompose(
-    move_to  => sub { printf "move_to: %f\n", $_[0] },
-    line_to  => sub { printf "line_to: %f\n", $_[0] },
-    conic_to => sub { printf "conic_to: %f\n", $_[0] },
-    cubic_to => sub { printf "cubic_to: %f\n", $_[0] },
-);
+    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'A', 100);
+    my $dpi = 100;
+
+    our $face = Font::FreeType->new->face($filename);
+    $face->set_char_size($size, $size, $dpi, $dpi);
+
+    $char = ord($char);
+    our $glyph = $face->glyph_from_char_code($char);
+    die "No glyph for character '$char'.\n" if (! $glyph);
+
+    # $glyph->outline_decompose(
+    #     move_to  => sub { printf "move_to: %f\n", $_[0] },
+    #     line_to  => sub { printf "line_to: %f\n", $_[0] },
+    #     conic_to => sub { printf "conic_to: %f\n", $_[0] },
+    #     cubic_to => sub { printf "cubic_to: %f\n", $_[0] },
+    # );
+}
+
+
+&main();
+
+sub display 
+{
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    #glRectf(0.0,0.0,100.0,100.0);
+
+    glColor3f(1.0, 1.0, 1.0);
+    glBegin(GL_LINE_LOOP);
+    $glyph->outline_decompose(
+        move_to  => sub { glVertex3f( $_[0], $_[1], 0.0) },
+        line_to  => sub { glVertex3f( $_[0], $_[1], 0.0) },
+        conic_to => sub { glVertex3f( $_[0], $_[1], 0.0) },
+        cubic_to => sub { glVertex3f( $_[0], $_[1], 0.0) }
+    );
+    glEnd();
+
+    glutSwapBuffers();
+}
+
+sub idle 
+{
+    sleep 0.02;
+    glutPostRedisplay();
+}
+
+sub init
+{
+    glClearColor(0.0, 0.0, 0.0, 0.5);
+    glPointSize(1.0);
+    glLineWidth(1.0);
+    glEnable(GL_BLEND);
+    glEnable(GL_DEPTH_TEST);
+    # glEnable(GL_POINT_SMOOTH);
+    glEnable(GL_LINE_SMOOTH);
+}
+
+sub reshape 
+{
+    my ($w, $h) = (shift, shift);
+    #Same with screen size
+    state $hz_half = $WIDTH/2.0;
+    state $vt_half = $HEIGHT/2.0;
+    state $fa = 250.0;
+
+    glViewport(0, 0, $w, $h);
+    glMatrixMode(GL_PROJECTION);
+    glLoadIdentity();
+    glOrtho(-$hz_half, $hz_half, -$vt_half, $vt_half, 0.0, $fa*2.0); 
+    #gluPerspective( 90.0, 1.0, 1.0, $fa*2.0 );
+    glMatrixMode(GL_MODELVIEW);
+    glLoadIdentity();
+    gluLookAt(0.0,0.0,$fa, 0.0,0.0,0.0, 0.0,1.0, $fa);
+}
+
+sub hitkey 
+{
+    our $WinID;
+    my $k = lc(chr(shift));
+
+    if ( $k eq 'q') { glutDestroyWindow( $WinID ) }
+}
+
+sub quit
+{
+    glutDestroyWindow( $WinID );
+    exit;
+}
+
+sub main
+{
+    glutInit();
+    glutInitDisplayMode(GLUT_RGBA | GLUT_DOUBLE |GLUT_DEPTH | GLUT_MULTISAMPLE  );
+    glutInitWindowSize($WIDTH, $HEIGHT);
+    glutInitWindowPosition(100, 100);
+    our $WinID = glutCreateWindow("Display");
+    &init();
+    glutDisplayFunc(\&display);
+    glutReshapeFunc(\&reshape);
+    glutKeyboardFunc(\&hitkey);
+    glutIdleFunc(\&idle);
+    glutMainLoop();
+}
