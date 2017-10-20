@@ -29,13 +29,13 @@ BEGIN
     die "No glyph for character '$char'.\n" if (! $glyph);
 
     $glyph->outline_decompose(
-        move_to  => sub { printf "move_to: %f, %f \n", @_ },
-        line_to  => sub { printf "line_to: %f, %f \n", @_ },
+        move_to  => sub { printf "move_to: %f, %f\n", @_ },
+        line_to  => sub { printf "line_to: %f, %f\n", @_ },
         conic_to => sub { printf "conic_to: %f, %f  %f, %f\n", @_ },
         cubic_to => sub { printf "cubic_to: %f, %f %f, %f %f, %f\n", @_ },
     );
 
-    print $glyph->svg_path();
+    #print $glyph->svg_path();
 }
 
 
@@ -55,7 +55,11 @@ sub display
     $glyph->outline_decompose(
         move_to  => sub { glColor3f(1.0, 0.2, 0.2); glVertex3f( $_[0], $_[1], 0.0) },
         line_to  => sub { glColor3f(0.0, 1.0, 0.0); glVertex3f( $_[0], $_[1], 0.0) },
-        conic_to => sub { glColor3f(0.5, 0.5, 1.0); glVertex3f( $_[0], $_[1], 0.0) },
+        conic_to => sub { 
+                glColor3f(0.5, 0.5, 1.0);
+                glVertex3f( $_[0], $_[1], 0.0); 
+                glVertex3f( $_[2], $_[3], 0.0); 
+            },
         cubic_to => sub { glColor3f(1.0, 1.0, 1.0); glVertex3f( $_[0], $_[1], 0.0) }
     );
     glEnd();
