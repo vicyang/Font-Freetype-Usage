@@ -19,14 +19,13 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'A', 100);
+    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'R', 100);
     my $dpi = 100;
 
     our $face = Font::FreeType->new->face($filename);
     $face->set_char_size($size, $size, $dpi, $dpi);
 
-    $char = ord($char);
-    our $glyph = $face->glyph_from_char_code($char);
+    our $glyph = $face->glyph_from_char($char);
     die "No glyph for character '$char'.\n" if (! $glyph);
 
     # $glyph->outline_decompose(
@@ -35,6 +34,8 @@ BEGIN
     #     conic_to => sub { printf "conic_to: %f\n", $_[0] },
     #     cubic_to => sub { printf "cubic_to: %f\n", $_[0] },
     # );
+
+    print $glyph->svg_path();
 }
 
 
@@ -42,19 +43,24 @@ BEGIN
 
 sub display 
 {
+    state $iter = 0;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     #glRectf(0.0,0.0,100.0,100.0);
 
+    #random
+    #$glyph = $face->glyph_from_char( ('A'..'Z')[rand(26)] ) if ($iter % 20 == 1);
+
     glColor3f(1.0, 1.0, 1.0);
-    glBegin(GL_LINE_LOOP);
+    glBegin(GL_POINTS);
     $glyph->outline_decompose(
-        move_to  => sub { glVertex3f( $_[0], $_[1], 0.0) },
-        line_to  => sub { glVertex3f( $_[0], $_[1], 0.0) },
-        conic_to => sub { glVertex3f( $_[0], $_[1], 0.0) },
-        cubic_to => sub { glVertex3f( $_[0], $_[1], 0.0) }
+        move_to  => sub { glColor3f(1.0, 0.2, 0.2); glVertex3f( $_[0], $_[1], 0.0) },
+        line_to  => sub { glColor3f(0.0, 1.0, 0.0); glVertex3f( $_[0], $_[1], 0.0) },
+        conic_to => sub { glColor3f(0.5, 0.5, 1.0); glVertex3f( $_[0], $_[1], 0.0) },
+        cubic_to => sub { glColor3f(1.0, 1.0, 1.0); glVertex3f( $_[0], $_[1], 0.0) }
     );
     glEnd();
 
+    $iter++;
     glutSwapBuffers();
 }
 
@@ -67,12 +73,13 @@ sub idle
 sub init
 {
     glClearColor(0.0, 0.0, 0.0, 0.5);
-    glPointSize(1.0);
+    glPointSize(4.0);
     glLineWidth(1.0);
     glEnable(GL_BLEND);
     glEnable(GL_DEPTH_TEST);
     # glEnable(GL_POINT_SMOOTH);
     glEnable(GL_LINE_SMOOTH);
+    glShadeModel(GL_FLAT);
 }
 
 sub reshape 
