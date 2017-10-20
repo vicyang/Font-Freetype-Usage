@@ -17,10 +17,10 @@ my $glyph = $face->glyph_from_char_code($char);
 die "No glyph for character '$char'.\n" if (! $glyph);
 
 $glyph->outline_decompose(
-    move_to  => sub { printf "move_to: %f, %f\n", @_ },
-    line_to  => sub { printf "line_to: %f, %f\n", @_ },
-    conic_to => sub { printf "conic_to: %f, %f\n", @_ },
-    cubic_to => sub { printf "cubic_to: %f, %f\n", @_ },
+    move_to  => sub { printf "move_to: %.3f, %.3f\n", @_ },
+    line_to  => sub { printf "line_to: %.3f, %.3f\n", @_ },
+    conic_to => sub { printf "conic_to: %.3f, %.3f  %.3f, %.3f\n", @_ },
+    cubic_to => sub { printf "cubic_to: %.3f, %.3f %.3f, %.3f  %.3f, %.3f\n", @_ },
 );
 
 print "\n";
