@@ -19,7 +19,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'Q', 100);
+    my ($filename, $char, $size) = ("C:/windows/fonts/msyh.ttf", 'R', 100);
     my $dpi = 100;
 
     our $face = Font::FreeType->new->face($filename);
@@ -66,38 +66,39 @@ sub display
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     #glRectf(0.0,0.0,100.0,100.0);
 
-    #random
+    # random
     #$glyph = $face->glyph_from_char( ('A'..'Z')[rand(26)] ) if ($iter % 20 == 1);
 
-    my $px, $py, $parts, $t;
+    my $px, $py, $parts, $step;
     $parts = 5.0;
 
     glColor3f(1.0, 1.0, 1.0);
     $glyph->outline_decompose(
-        move_to  => sub { ($px, $py) = (@_); },
-        line_to  => sub {
-            glColor3f(0.0, 1.0, 0.0);
-            glBegin(GL_LINES);
+        move_to  => sub { ($px, $py) = @_; },
+        line_to  => 
+            sub
+            {
+                glColor3f(0.0, 1.0, 0.0);
+                glBegin(GL_LINES);
                 glVertex3f( $px, $py, 0.0);
                 glVertex3f( $_[0], $_[1], 0.0);
-            glEnd();
-            ($px, $py) = (@_);
+                glEnd();
+                ($px, $py) = @_;
             },
-        conic_to => sub 
+        conic_to => 
+            sub
             {
                 glColor3f(0.5, 0.5, 1.0);
                 glBegin(GL_LINE_STRIP);
-                for (my $step = 0.0; $step <= $parts; $step+=1.0)
+                for ($step = 0.0; $step <= $parts; $step+=1.0)
                 {
-                    glVertex3f( pointOnQuadBezier(  $px, $py, $_[2], $_[3], $_[0], $_[1], $step/$parts ), 0.0);
+                    glVertex3f( pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ), 0.0);
                 }
                 glEnd();
+                ($px, $py) = @_;
             },
-        cubic_to => sub {
-            glColor3f(1.0, 1.0, 1.0);
-            glVertex3f( $_[0], $_[1], 0.0);
 
-            }
+        cubic_to => sub { warn "cubic\n"; }
     );
 
     $iter++;
