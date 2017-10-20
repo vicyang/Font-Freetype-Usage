@@ -19,7 +19,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/msyh.ttf", 'O', 100);
+    my ($filename, $char, $size) = ("C:/windows/fonts/STXingKa.ttf", '临', 150);
     my $dpi = 100;
 
     our $face = Font::FreeType->new->face($filename);
@@ -28,12 +28,7 @@ BEGIN
     our $glyph = $face->glyph_from_char($char);
     die "No glyph for character '$char'.\n" if (! $glyph);
 
-    $glyph->outline_decompose(
-        move_to  => sub { printf "move_to: %.3f, %.3f\n", @_ },
-        line_to  => sub { printf "line_to: %.3f, %.3f\n", @_ },
-        conic_to => sub { printf "conic_to: %.3f, %.3f Ctrl: %.3f, %.3f\n", @_ },
-        cubic_to => sub { printf "cubic_to: %.3f, %.3f %.3f, %.3f  %.3f, %.3f\n", @_ },
-    );
+    our $tobj;
 }
 
 
@@ -57,6 +52,17 @@ sub pointOnQuadBezier
                $t
            );
 }
+
+sub beginCallback { glBegin( $_[0] ); }
+sub endCallback   { glEnd(); }
+sub errorCallback { print gluErrorString($_[0]),"\n"; quit(); }
+sub vertexCallback
+{
+    print @_ ,"\n";
+    #glVertex3dv(vertex);
+}
+
+
 
 sub display 
 {
@@ -99,6 +105,31 @@ sub display
         cubic_to => sub { warn "cubic\n"; }
     );
 
+
+    #gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3dv );
+    gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback) or die "";
+    gluTessCallback($tobj, GLU_TESS_BEGIN,  \&beginCallback);
+    gluTessCallback($tobj, GLU_TESS_END,    \&endCallback);
+    gluTessCallback($tobj, GLU_TESS_ERROR,  \&errorCallback);
+
+    gluTessBeginPolygon($tobj, NULL);
+
+    # for (int c = 0; c < vtx_ctsi; c++ )
+    # {
+    #     int i = (c == 0 ? 0 : vtx_contours[c-1]+1 );
+    #     gluTessBeginContour(tobj);
+        
+    #     for (; i <= vtx_contours[c] ; i++)
+    #     {
+    #         gluTessVertex(tobj, vtx[i], vtx[i]);
+    #     }
+
+    #     gluTessEndContour(tobj);
+    # }
+    
+    gluTessEndPolygon($tobj);
+
+
     $iter++;
     glutSwapBuffers();
 }
@@ -119,6 +150,8 @@ sub init
     # glEnable(GL_POINT_SMOOTH);
     glEnable(GL_LINE_SMOOTH);
     glShadeModel(GL_FLAT);
+
+    $tobj = gluNewTess();
 }
 
 sub reshape 
