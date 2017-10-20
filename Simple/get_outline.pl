@@ -6,7 +6,7 @@ use Data::Dump qw/dump/;
 use Data::Dumper;
 use Font::FreeType;
 
-my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'A', 20);
+my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'o', 10);
 my $dpi = 100;
 
 my $face = Font::FreeType->new->face($filename);
@@ -22,3 +22,7 @@ $glyph->outline_decompose(
     conic_to => sub { printf "conic_to: %f, %f\n", @_ },
     cubic_to => sub { printf "cubic_to: %f, %f\n", @_ },
 );
+
+print "\n";
+
+print $glyph->svg_path();

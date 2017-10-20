@@ -1,7 +1,7 @@
 =info
     提取Outlines(轮廓信息)
 =cut
-
+use Encode;
 use Data::Dump qw/dump/;
 use Data::Dumper;
 use Font::FreeType;
@@ -19,7 +19,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'R', 100);
+    my ($filename, $char, $size) = ("C:/windows/fonts/arial.ttf", 'O', 100);
     my $dpi = 100;
 
     our $face = Font::FreeType->new->face($filename);
@@ -28,12 +28,12 @@ BEGIN
     our $glyph = $face->glyph_from_char($char);
     die "No glyph for character '$char'.\n" if (! $glyph);
 
-    # $glyph->outline_decompose(
-    #     move_to  => sub { printf "move_to: %f\n", $_[0] },
-    #     line_to  => sub { printf "line_to: %f\n", $_[0] },
-    #     conic_to => sub { printf "conic_to: %f\n", $_[0] },
-    #     cubic_to => sub { printf "cubic_to: %f\n", $_[0] },
-    # );
+    $glyph->outline_decompose(
+        move_to  => sub { printf "move_to: %f, %f\n", @_ },
+        line_to  => sub { printf "line_to: %f, %f\n", @_ },
+        conic_to => sub { printf "conic_to: %f, %f\n", @_ },
+        cubic_to => sub { printf "cubic_to: %f, %f\n", @_ },
+    );
 
     print $glyph->svg_path();
 }
