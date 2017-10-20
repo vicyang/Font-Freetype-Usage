@@ -53,16 +53,10 @@ sub pointOnQuadBezier
            );
 }
 
-sub beginCallback { glBegin( $_[0] ); }
-sub endCallback   { glEnd(); }
-sub errorCallback { print gluErrorString($_[0]),"\n"; quit(); }
-sub vertexCallback
-{
-    print @_ ,"\n";
-    #glVertex3dv(vertex);
-}
-
-
+sub beginCallback  { glBegin( $_[0] ); }
+sub endCallback    { glEnd(); }
+sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
+sub vertexCallback { glVertex3f( @_ ); }
 
 sub display 
 {
@@ -76,29 +70,32 @@ sub display
     my $px, $py, $parts, $step;
     $parts = 5.0;
 
+    my @contour;
+    my $ncts = -1;
+
     glColor3f(1.0, 1.0, 1.0);
     $glyph->outline_decompose(
-        move_to  => sub { ($px, $py) = @_; },
+        move_to  => 
+            sub 
+            { 
+                ($px, $py) = @_;
+                $ncts++;
+                push @{$contour[$ncts]}, [$px, $py];
+            },
         line_to  => 
             sub
             {
-                glColor3f(0.0, 1.0, 0.0);
-                glBegin(GL_LINES);
-                glVertex3f( $px, $py, 0.0);
-                glVertex3f( $_[0], $_[1], 0.0);
-                glEnd();
                 ($px, $py) = @_;
+                push @{$contour[$ncts]}, [$px, $py];
             },
         conic_to => 
             sub
             {
-                glColor3f(0.5, 0.5, 1.0);
-                glBegin(GL_LINE_STRIP);
                 for ($step = 0.0; $step <= $parts; $step+=1.0)
                 {
-                    glVertex3f( pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ), 0.0);
+                    push @{$contour[$ncts]}, 
+                        [ pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ) ];
                 }
-                glEnd();
                 ($px, $py) = @_;
             },
 
@@ -106,29 +103,25 @@ sub display
     );
 
 
-    #gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3dv );
-    gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback) or die "";
+    gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3f );
+    #gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback);
     gluTessCallback($tobj, GLU_TESS_BEGIN,  \&beginCallback);
     gluTessCallback($tobj, GLU_TESS_END,    \&endCallback);
     gluTessCallback($tobj, GLU_TESS_ERROR,  \&errorCallback);
 
     gluTessBeginPolygon($tobj, NULL);
 
-    # for (int c = 0; c < vtx_ctsi; c++ )
-    # {
-    #     int i = (c == 0 ? 0 : vtx_contours[c-1]+1 );
-    #     gluTessBeginContour(tobj);
-        
-    #     for (; i <= vtx_contours[c] ; i++)
-    #     {
-    #         gluTessVertex(tobj, vtx[i], vtx[i]);
-    #     }
-
-    #     gluTessEndContour(tobj);
-    # }
-    
+    my $ci, $ei;
+    for ($ci = 0; $ci <= $ncts; $ci++ )
+    {
+        gluTessBeginContour($tobj);
+        for ($ei = 0; $ei <= $#{$contour[$ci]}; $ei++)
+        {
+            gluTessVertex_p($tobj, $contour[$ci]->[$ei][0], $contour[$ci]->[$ei][1], 0.0 );
+        }
+        gluTessEndContour($tobj);
+    }    
     gluTessEndPolygon($tobj);
-
 
     $iter++;
     glutSwapBuffers();
