@@ -1,19 +1,17 @@
 =info
     提取Outlines(轮廓信息)
 =cut
+
 use autodie;
 use utf8;
 use Encode;
-use Data::Dump qw/dump/;
-use Data::Dumper;
 use Font::FreeType;
 use feature 'state';
 use OpenGL qw/ :all /;
 use OpenGL::Config;
 
 BEGIN
-{
-    use utf8;
+{    
     use IO::Handle;
     STDOUT->autoflush(1);
 
@@ -36,9 +34,14 @@ INIT
     print "Loading contours ... ";
     my $code;
     my $char;
-    foreach $code (0x00..0x7F, 0x4E00..0x9FA5 )
+    foreach $code (0x00..0x7F)
     {
         $char = chr( $code );
+        $TEXT{ $char } = get_contour( $char ); 
+    }
+
+    foreach $char (split //, "年月日期数据")
+    {
         $TEXT{ $char } = get_contour( $char ); 
     }
     print "Done\n";
@@ -54,10 +57,6 @@ sub draw_box_lines
     glVertex3f(200.0, 0.0, 0.0);
     glVertex3f(0.0, -200.0, 0.0);
     glVertex3f(0.0, 200.0, 0.0);
-
-    glColor3f(0.0, 0.8, 0.0);
-    glVertex3f(-200.0, $glyph->vertical_advance(), 0.0);
-    glVertex3f(200.0, $glyph->vertical_advance(), 0.0);
     glEnd();
 }
 
@@ -100,7 +99,7 @@ sub display
     draw_box_lines();
 
     glColor3f(1.0, 1.0, 1.0);
-    draw_string("abge数据QT");
+    draw_string("ab:?ge数据QT");
 
     glPopMatrix();
     $iter++;
