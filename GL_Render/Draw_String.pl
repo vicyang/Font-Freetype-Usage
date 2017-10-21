@@ -26,6 +26,7 @@ BEGIN
     $face->set_char_size($size, $size, $dpi, $dpi);
 
     our $tobj;
+    our ($rx, $ry, $rz) = (0.0, 0.0, 0.0);
 }
 
 INIT
