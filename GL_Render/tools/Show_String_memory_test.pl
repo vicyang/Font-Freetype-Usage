@@ -44,7 +44,6 @@ INIT
     }
     
     print "Done\n";
-    sleep 5.0;
     exit;
 }
 

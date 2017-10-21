@@ -93,13 +93,13 @@ sub get_contour
             {
                 ($px, $py) = @_;
                 $ncts++;
-                push @{$contour[$ncts]}, [$px, $py];
+                push @{$contour[$ncts]}, ($px, $py);
             },
         line_to  => 
             sub
             {
                 ($px, $py) = @_;
-                push @{$contour[$ncts]}, [$px, $py];
+                push @{$contour[$ncts]}, ($px, $py);
             },
         conic_to => 
             sub
@@ -107,7 +107,7 @@ sub get_contour
                 for ($step = 0.0; $step <= $parts; $step+=1.0)
                 {
                     push @{$contour[$ncts]}, 
-                        [pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts )];
+                        (pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ));
                 }
                 ($px, $py) = @_;
             },
