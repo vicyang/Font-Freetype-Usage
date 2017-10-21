@@ -8,12 +8,8 @@ use Data::Dump qw/dump/;
 use Data::Dumper;
 use Font::FreeType;
 use feature 'state';
-
-
 use OpenGL qw/ :all /;
 use OpenGL::Config;
-
-
 
 BEGIN
 {
