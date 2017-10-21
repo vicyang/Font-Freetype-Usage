@@ -36,19 +36,14 @@ INIT
     print "Loading contours ... ";
     my $code;
     my $char;
-
-    foreach $code ( 0x00 .. 0x7F )
+    foreach $code (0x00..0x7F, 0x4E00..0x9FA5 )
     {
         $char = chr( $code );
         $TEXT{ $char } = get_contour( $char ); 
     }
-
-    foreach $char ( split //, "年日月期数据" )
-    {
-        $TEXT{ $char } = get_contour( $char ); 
-    }
-    
     print "Done\n";
+    sleep 5.0;
+    exit;
 }
 
 &main();
@@ -214,13 +209,13 @@ BEZIER_FUNCTION:
     sub pointOnQuadBezier
     {
         my ($x1, $y1, $x2, $y2, $x3, $y3, $t) = @_;
-        return pointOnLine(
+        return 
+            pointOnLine(
                    pointOnLine( $x1, $y1, $x2, $y2, $t ),
                    pointOnLine( $x2, $y2, $x3, $y3, $t ),
                    $t
-               );
+            );
     }
-
 }
 
 TESS_CALLBACK_FUNCTION:
@@ -233,12 +228,12 @@ TESS_CALLBACK_FUNCTION:
 
 sub get_contour
 {
-    my ($char) = shift;
+    our $glyph;
+    my $char = shift;
     #previous x, y
     my $px, $py, $parts, $step;
-    my @contour;
-    my $nts = -1;
-    our ($glyph);
+    my @contour = ();
+    my $ncts    = -1;
     
     $parts = 5;
     $glyph = $face->glyph_from_char($char) || return undef;
@@ -272,7 +267,6 @@ sub get_contour
 
     return { 
         outline => \@contour,
-        n       => $ncts+1,
         right   => $glyph->horizontal_advance(),
-        };
+    };
 }
