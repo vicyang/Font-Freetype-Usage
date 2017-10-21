@@ -69,15 +69,6 @@ BEZIER_FUNCTION:
                    $t
                );
     }
-
-}
-
-TESS_CALLBACK_FUNCTION:
-{
-    sub beginCallback  { glBegin( $_[0] ); print( $_[0] ," ") }
-    sub endCallback    { glEnd(); }
-    sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
-    sub vertexCallback { glVertex3f( @_ ); }
 }
 
 sub get_contour
@@ -119,7 +110,7 @@ sub get_contour
         cubic_to => sub { warn "cubic\n"; }
     );
 
-    printf "%d\n", $#contour;
+    #printf "%d\n", $#contour;
 
     return { 
         outline => [ @contour ],
