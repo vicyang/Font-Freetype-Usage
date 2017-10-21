@@ -22,7 +22,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    our ($font, $size) = ("C:/windows/fonts/simsun.ttc", 32);
+    our ($font, $size) = ("C:/windows/fonts/msyh.ttf", 24);
     our $dpi = 100;
 
     our $face = Font::FreeType->new->face($font);

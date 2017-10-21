@@ -1,6 +1,6 @@
 use Font::FreeType;
 
-my $filename = "C:/Windows/Fonts/Couri.ttf";
+my $filename = "C:/Windows/Fonts/msyh.ttf";
 my $face = Font::FreeType->new->face($filename);
 
 $face->foreach_char(
