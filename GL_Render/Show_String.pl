@@ -22,7 +22,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    our ($font, $size) = ("C:/windows/fonts/STXingKa.ttf", 50);
+    our ($font, $size) = ("C:/windows/fonts/simsun.ttc", 32);
     our $dpi = 100;
 
     our $face = Font::FreeType->new->face($font);
@@ -33,7 +33,7 @@ BEGIN
 
 INIT
 {
-    our $text = "九霄龙吟惊天变风云际会浅水游";
+    our $text = "九霄龙吟惊天变风云际会浅水游". join('', a..z, A..Z);
     our %TEXT;
 
     for my $char ( split //, $text )
@@ -52,46 +52,44 @@ TESS_CALLBACK_FUNCTION:
     sub vertexCallback { glVertex3f( @_ ); }
 }
 
-sub get_contour
+sub draw_box_lines
 {
-    my ($char) = shift;
-    #previous x, y
-    my $px, $py, $parts, $step;
-    my @contour;
-    my $nts = -1;
-    our ($glyph);
-    
-    $parts = 5;
-    $glyph = $face->glyph_from_char($char) or die "No glyph for character $char\n";
+    glBegin(GL_LINES);
+    glColor3f(1.0, 0.0, 0.0);
+    glVertex3f(-200.0, 0.0, 0.0);
+    glVertex3f(200.0, 0.0, 0.0);
+    glVertex3f(0.0, -200.0, 0.0);
+    glVertex3f(0.0, 200.0, 0.0);
 
-    $glyph->outline_decompose(
-        move_to  => 
-            sub 
-            {
-                ($px, $py) = @_;
-                $ncts++;
-                push @{$contour[$ncts]}, [$px, $py];
-            },
-        line_to  => 
-            sub
-            {
-                ($px, $py) = @_;
-                push @{$contour[$ncts]}, [$px, $py];
-            },
-        conic_to => 
-            sub
-            {
-                for ($step = 0.0; $step <= $parts; $step+=1.0)
-                {
-                    push @{$contour[$ncts]}, 
-                        [ pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ) ];
-                }
-                ($px, $py) = @_;
-            },
-        cubic_to => sub { warn "cubic\n"; }
-    );
+    glColor3f(0.0, 0.8, 0.0);
+    glVertex3f(-200.0, $glyph->vertical_advance(), 0.0);
+    glVertex3f(200.0, $glyph->vertical_advance(), 0.0);
+    glEnd();
+}
 
-    return { outline => \@contour, n => $ncts+1 };
+sub draw_character
+{
+    our @TEXT;
+    my $char = shift;
+    my $cts;
+    gluTessBeginPolygon($tobj);
+    for $cts ( @{$TEXT{$char}->{outline}} )
+    {
+        gluTessBeginContour($tobj);
+        grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$cts;
+        gluTessEndContour($tobj);
+    }
+    gluTessEndPolygon($tobj);
+}
+
+sub draw_string
+{
+    my $s = shift;
+    for my $c ( split //, $s )
+    {
+        draw_character($c);
+        glTranslatef($TEXT{$c}->{right}, 0.0, 0.0);
+    }
 }
 
 sub display 
@@ -105,26 +103,10 @@ sub display
     glRotatef($ry, 0.0, 1.0, 0.0);
     glRotatef($rz, 0.0, 0.0, 1.0);
 
+    draw_box_lines();
+
     glColor3f(1.0, 1.0, 1.0);
-
-    gluTessBeginPolygon($tobj);
-    for my $cts ( @{$TEXT{'九'}->{outline}} )
-    {
-        gluTessBeginContour($tobj);
-        grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$cts;
-        gluTessEndContour($tobj);
-    }
-    gluTessEndPolygon($tobj);
-
-    glTranslatef(-100.0, 0.0, 0.0);
-    gluTessBeginPolygon($tobj);
-    for my $cts ( @{$TEXT{'云'}->{outline}} )
-    {
-        gluTessBeginContour($tobj);
-        grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$cts;
-        gluTessEndContour($tobj);
-    }
-    gluTessEndPolygon($tobj);
+    draw_string("abge九fk");
 
     glPopMatrix();
     $iter++;
@@ -238,4 +220,50 @@ BEZIER_FUNCTION:
                );
     }
 
+}
+
+sub get_contour
+{
+    my ($char) = shift;
+    #previous x, y
+    my $px, $py, $parts, $step;
+    my @contour;
+    my $nts = -1;
+    our ($glyph);
+    
+    $parts = 5;
+    $glyph = $face->glyph_from_char($char) or die "No glyph for character $char\n";
+
+    $glyph->outline_decompose(
+        move_to  => 
+            sub 
+            {
+                ($px, $py) = @_;
+                $ncts++;
+                push @{$contour[$ncts]}, [$px, $py];
+            },
+        line_to  => 
+            sub
+            {
+                ($px, $py) = @_;
+                push @{$contour[$ncts]}, [$px, $py];
+            },
+        conic_to => 
+            sub
+            {
+                for ($step = 0.0; $step <= $parts; $step+=1.0)
+                {
+                    push @{$contour[$ncts]}, 
+                        [ pointOnQuadBezier( $px, $py, @_[2,3,0,1], $step/$parts ) ];
+                }
+                ($px, $py) = @_;
+            },
+        cubic_to => sub { warn "cubic\n"; }
+    );
+
+    return { 
+        outline => \@contour, 
+        n       => $ncts+1,
+        right   => $glyph->horizontal_advance(),
+        };
 }
