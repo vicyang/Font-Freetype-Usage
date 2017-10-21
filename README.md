@@ -2,9 +2,9 @@
 关于Font::Freetype 模块的安装和代码示例  
 
 * #### 安装
-  [[metacpan]Font::FreeType](https://metacpan.org/pod/Font::FreeType)
-  环境 Win7, Strawberry Perl V5.24 Portable  
-  参考 [Strawberry Perl 环境配置 以及 版本推荐](http://code-by.org/viewtopic.php?f=17&t=272)  
+  模块地址：[Font::FreeType](https://metacpan.org/pod/Font::FreeType)  
+  推荐环境：Win7, Strawberry Perl V5.24 Portable  
+  参考：[Strawberry Perl 环境配置 以及 版本推荐](http://code-by.org/viewtopic.php?f=17&t=272)  
   
   解压后执行  
   >perl Makefile.PL  
