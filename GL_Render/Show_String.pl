@@ -8,21 +8,24 @@ use Data::Dump qw/dump/;
 use Data::Dumper;
 use Font::FreeType;
 use feature 'state';
-use IO::Handle;
+
 
 use OpenGL qw/ :all /;
 use OpenGL::Config;
 
-STDOUT->autoflush(1);
+
 
 BEGIN
 {
     use utf8;
+    use IO::Handle;
+    STDOUT->autoflush(1);
+
     our $WinID;
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    our ($font, $size) = ("C:/windows/fonts/msyh.ttf", 24);
+    our ($font, $size) = ("C:/windows/fonts/msyh.ttf", 32);
     our $dpi = 100;
 
     our $face = Font::FreeType->new->face($font);
@@ -33,24 +36,26 @@ BEGIN
 
 INIT
 {
-    our $text = "九霄龙吟惊天变风云际会浅水游". join('', a..z, A..Z);
     our %TEXT;
+    print "Loading contours ... ";
+    my $code;
+    my $char;
 
-    for my $char ( split //, $text )
+    foreach $code ( 0x00 .. 0x7F )
     {
-        $TEXT{$char} = get_contour($char);
+        $char = chr( $code );
+        $TEXT{ $char } = get_contour( $char ); 
     }
+
+    foreach $char ( split //, "年日月期数据" )
+    {
+        $TEXT{ $char } = get_contour( $char ); 
+    }
+    
+    print "Done\n";
 }
 
 &main();
-
-TESS_CALLBACK_FUNCTION:
-{
-    sub beginCallback  { glBegin( $_[0] ); print( $_[0] ," ") }
-    sub endCallback    { glEnd(); }
-    sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
-    sub vertexCallback { glVertex3f( @_ ); }
-}
 
 sub draw_box_lines
 {
@@ -106,7 +111,7 @@ sub display
     draw_box_lines();
 
     glColor3f(1.0, 1.0, 1.0);
-    draw_string("abge九fk");
+    draw_string("abge数据QT");
 
     glPopMatrix();
     $iter++;
@@ -222,6 +227,14 @@ BEZIER_FUNCTION:
 
 }
 
+TESS_CALLBACK_FUNCTION:
+{
+    sub beginCallback  { glBegin( $_[0] ); print( $_[0] ," ") }
+    sub endCallback    { glEnd(); }
+    sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
+    sub vertexCallback { glVertex3f( @_ ); }
+}
+
 sub get_contour
 {
     my ($char) = shift;
@@ -232,7 +245,7 @@ sub get_contour
     our ($glyph);
     
     $parts = 5;
-    $glyph = $face->glyph_from_char($char) or die "No glyph for character $char\n";
+    $glyph = $face->glyph_from_char($char) || return undef;
 
     $glyph->outline_decompose(
         move_to  => 
@@ -262,7 +275,7 @@ sub get_contour
     );
 
     return { 
-        outline => \@contour, 
+        outline => \@contour,
         n       => $ncts+1,
         right   => $glyph->horizontal_advance(),
         };
