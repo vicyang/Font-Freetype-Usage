@@ -6,6 +6,13 @@ my $face = Font::FreeType->new->face($filename);
 $face->foreach_char(
     sub 
     {
-        printf("%s\t%s\n", $_->char_code, $_->name) if (defined $_->name );
+        if (defined $_->name )
+        {
+            printf("%d\t%s\n", $_->char_code, $_->name);
+        }
+        else
+        {
+            printf("%s\n", $_->char_code);
+        }
     }
 );
