@@ -82,14 +82,12 @@ TESS_CALLBACK_FUNCTION:
 
 sub get_contour
 {
-    my ($char) = shift;
+    our $glyph;
+    my $char = shift;
     #previous x, y
     my $px, $py, $parts, $step;
-    my @contour;
-    my $nts = -1;
-    our ($glyph);
-
-    @contour = ();
+    my @contour = ();
+    my $ncts    = -1;
     
     $parts = 5;
     $glyph = $face->glyph_from_char($char) || return undef;
@@ -124,7 +122,7 @@ sub get_contour
     printf "%d\n", $#contour;
 
     return { 
-        outline => [ @{$contour[0]} ],
+        outline => [ @contour ],
         right   => $glyph->horizontal_advance(),
-        };
+    };
 }
