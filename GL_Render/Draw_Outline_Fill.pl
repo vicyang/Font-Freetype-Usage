@@ -19,7 +19,7 @@ BEGIN
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/STXingKa.ttf", '临', 150);
+    my ($filename, $char, $size) = ("C:/windows/fonts/STXingKa.ttf", '风', 100);
     my $dpi = 100;
 
     our $face = Font::FreeType->new->face($filename);
@@ -29,6 +29,16 @@ BEGIN
     die "No glyph for character '$char'.\n" if (! $glyph);
 
     our $tobj;
+    our $bbox = $face->bounding_box();
+
+    print join("\n", 
+        $face->underline_position(),
+        $face->underline_thickness(),
+        $bbox->x_min(),
+
+        $glyph->width(),
+        $glyph->height(),
+    );
 }
 
 
@@ -105,6 +115,33 @@ sub display
         gluTessEndContour($tobj);
     }
     gluTessEndPolygon($tobj);
+
+    glBegin(GL_LINES);
+    glColor3f(1.0, 0.0, 0.0);
+    glVertex3f(-200.0, 0.0, 0.0);
+    glVertex3f(200.0, 0.0, 0.0);
+    glVertex3f(0.0, -200.0, 0.0);
+    glVertex3f(0.0, 200.0, 0.0);
+
+    glColor3f(0.0, 0.8, 0.0);
+    glVertex3f(-200.0, $glyph->height(), 0.0);
+    glVertex3f(200.0, $glyph->height(), 0.0);
+
+    glVertex3f($glyph->width(), -200.0, 0.0);
+    glVertex3f($glyph->width(), 200.0, 0.0);    
+
+    glColor3f(0.8, 0.8, 0.0);
+    glVertex3f($glyph->horizontal_advance(), -200.0, 0.0);
+    glVertex3f($glyph->horizontal_advance(), 200.0, 0.0);
+    
+    glColor3f(0.8, 0.8, 1.0);
+    glVertex3f($glyph->left_bearing(), -200.0, 0.0);
+    glVertex3f($glyph->left_bearing(), 200.0, 0.0);
+
+    glVertex3f($glyph->right_bearing(), -200.0, 0.0);
+    glVertex3f($glyph->right_bearing(), 200.0, 0.0);
+
+    glEnd();
 
     $iter++;
     glutSwapBuffers();
