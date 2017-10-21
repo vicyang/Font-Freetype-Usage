@@ -11,9 +11,8 @@ BEGIN
 
 INIT
 {
-    our %TEXT;
-    my $href;
+    our $TEXT;
     print "Loading ... ";
-    $href = retrieve 'msyhContour.perldb';
+    $TEXT = retrieve 'msyhContour.perldb';
     print "Done\n";
 }
