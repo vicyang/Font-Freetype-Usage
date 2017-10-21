@@ -1,5 +1,7 @@
 =info
-    提取Outlines(轮廓信息)
+    Font::Freetype + OpenGL 字符轮廓填充
+    523066680
+    2017-10
 =cut
 
 use autodie;

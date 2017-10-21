@@ -10,6 +10,8 @@
     `our $text = "九霄龙吟惊天变风云际会浅水游". join('', a..z, A..Z);`  
     内存占用 30MB左右  
     如果读取msyh.ttf所有字符轮廓数据，并转为数组，会导致爆内存。
+  * tab v0.3
+    解决爆内存问题
 
 * 参考
   [汉字 Unicode 编码范围](http://www.qqxiuzi.cn/zh/hanzi-unicode-bianma.php)
