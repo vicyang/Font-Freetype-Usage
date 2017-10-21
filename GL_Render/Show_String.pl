@@ -42,8 +42,6 @@ INIT
         $TEXT{ $char } = get_contour( $char ); 
     }
     print "Done\n";
-    sleep 5.0;
-    exit;
 }
 
 &main();
@@ -266,7 +264,7 @@ sub get_contour
     );
 
     return { 
-        outline => \@contour,
+        outline => [@contour],
         right   => $glyph->horizontal_advance(),
     };
 }
