@@ -1,6 +1,8 @@
 =info
     提取Outlines(轮廓信息)
 =cut
+use autodie;
+use utf8;
 use Encode;
 use Data::Dump qw/dump/;
 use Data::Dumper;
@@ -15,64 +17,57 @@ STDOUT->autoflush(1);
 
 BEGIN
 {
+    use utf8;
     our $WinID;
     our $HEIGHT = 500;
     our $WIDTH  = 500;
 
-    my ($filename, $char, $size) = ("C:/windows/fonts/STXingKa.ttf", '临', 150);
-    my $dpi = 100;
+    our ($font, $size) = ("C:/windows/fonts/STXingKa.ttf", 50);
+    our $dpi = 100;
 
-    our $face = Font::FreeType->new->face($filename);
+    our $face = Font::FreeType->new->face($font);
     $face->set_char_size($size, $size, $dpi, $dpi);
-
-    our $glyph = $face->glyph_from_char($char);
-    die "No glyph for character '$char'.\n" if (! $glyph);
 
     our $tobj;
 }
 
+INIT
+{
+    our $text = "九霄龙吟惊天变风云际会浅水游";
+    our %TEXT;
+
+    for my $char ( split //, $text )
+    {
+        $TEXT{$char} = get_contour($char);
+    }
+}
 
 &main();
 
-sub pointOnLine
+TESS_CALLBACK_FUNCTION:
 {
-    my ($x1, $y1, $x2, $y2, $t) = @_;
-    return (
-        ($x2-$x1)*$t + $x1, 
-        ($y2-$y1)*$t + $y1 
-    );
+    sub beginCallback  { glBegin( $_[0] ); print( $_[0] ," ") }
+    sub endCallback    { glEnd(); }
+    sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
+    sub vertexCallback { glVertex3f( @_ ); }
 }
 
-sub pointOnQuadBezier
+sub get_contour
 {
-    my ($x1, $y1, $x2, $y2, $x3, $y3, $t) = @_;
-    return pointOnLine(
-               pointOnLine( $x1, $y1, $x2, $y2, $t ),
-               pointOnLine( $x2, $y2, $x3, $y3, $t ),
-               $t
-           );
-}
-
-sub beginCallback  { glBegin( $_[0] ); }
-sub endCallback    { glEnd(); }
-sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
-sub vertexCallback { glVertex3f( @_ ); }
-
-sub display 
-{
-    state $iter = 0;
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+    my ($char) = shift;
+    #previous x, y
     my $px, $py, $parts, $step;
-    $parts = 5.0;
-
     my @contour;
-    my $ncts = -1;
+    my $nts = -1;
+    our ($glyph);
+    
+    $parts = 5;
+    $glyph = $face->glyph_from_char($char) or die "No glyph for character $char\n";
 
-    glColor3f(1.0, 1.0, 1.0);
     $glyph->outline_decompose(
         move_to  => 
             sub 
-            { 
+            {
                 ($px, $py) = @_;
                 $ncts++;
                 push @{$contour[$ncts]}, [$px, $py];
@@ -93,12 +88,27 @@ sub display
                 }
                 ($px, $py) = @_;
             },
-
         cubic_to => sub { warn "cubic\n"; }
     );
 
+    return { outline => \@contour, n => $ncts+1 };
+}
+
+sub display 
+{
+    state $iter = 0;
+    state $ti = 0;
+    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+    glPushMatrix();
+    glRotatef($rx, 1.0, 0.0, 0.0);
+    glRotatef($ry, 0.0, 1.0, 0.0);
+    glRotatef($rz, 0.0, 0.0, 1.0);
+
+    glColor3f(1.0, 1.0, 1.0);
+
     gluTessBeginPolygon($tobj);
-    for my $cts ( @contour )
+    for my $cts ( @{$TEXT{'九'}->{outline}} )
     {
         gluTessBeginContour($tobj);
         grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$cts;
@@ -106,6 +116,17 @@ sub display
     }
     gluTessEndPolygon($tobj);
 
+    glTranslatef(-100.0, 0.0, 0.0);
+    gluTessBeginPolygon($tobj);
+    for my $cts ( @{$TEXT{'云'}->{outline}} )
+    {
+        gluTessBeginContour($tobj);
+        grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$cts;
+        gluTessEndContour($tobj);
+    }
+    gluTessEndPolygon($tobj);
+
+    glPopMatrix();
     $iter++;
     glutSwapBuffers();
 }
@@ -128,6 +149,7 @@ sub init
     glShadeModel(GL_FLAT);
 
     $tobj = gluNewTess();
+
     # gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3f );
     # #gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback);
     # gluTessCallback($tobj, GLU_TESS_BEGIN,  \&beginCallback);
@@ -165,7 +187,13 @@ sub hitkey
     our $WinID;
     my $k = lc(chr(shift));
 
-    if ( $k eq 'q') { glutDestroyWindow( $WinID ) }
+    if ( $k eq 'q') { quit() }
+    if ( $k eq 'w') { $rx+=10.0 }
+    if ( $k eq 's') { $rx-=10.0 }
+    if ( $k eq 'a') { $ry-=10.0 }
+    if ( $k eq 'd') { $ry+=10.0 }
+    if ( $k eq 'j') { $rz+=10.0 }
+    if ( $k eq 'k') { $rz-=10.0 }
 }
 
 sub quit
@@ -187,4 +215,27 @@ sub main
     glutKeyboardFunc(\&hitkey);
     glutIdleFunc(\&idle);
     glutMainLoop();
+}
+
+BEZIER_FUNCTION:
+{
+    sub pointOnLine
+    {
+        my ($x1, $y1, $x2, $y2, $t) = @_;
+        return (
+            ($x2-$x1)*$t + $x1, 
+            ($y2-$y1)*$t + $y1 
+        );
+    }
+
+    sub pointOnQuadBezier
+    {
+        my ($x1, $y1, $x2, $y2, $x3, $y3, $t) = @_;
+        return pointOnLine(
+                   pointOnLine( $x1, $y1, $x2, $y2, $t ),
+                   pointOnLine( $x2, $y2, $x3, $y3, $t ),
+                   $t
+               );
+    }
+
 }
