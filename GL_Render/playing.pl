@@ -15,6 +15,7 @@ STDOUT->autoflush(1);
 
 BEGIN
 {
+    use utf8;
     our $WinID;
     our $HEIGHT = 500;
     our $WIDTH  = 500;
@@ -29,49 +30,41 @@ BEGIN
     die "No glyph for character '$char'.\n" if (! $glyph);
 
     our $tobj;
+    our @TEXT = split //, "九霄龙吟惊天变风云际会浅水游";
 }
+
 
 
 &main();
 
-sub pointOnLine
+TESS_CALLBACK_FUNCTION:
 {
-    my ($x1, $y1, $x2, $y2, $t) = @_;
-    return (
-        ($x2-$x1)*$t + $x1, 
-        ($y2-$y1)*$t + $y1 
-    );
+    sub beginCallback  { glBegin( $_[0] ); print( $_[0] ," ") }
+    sub endCallback    { glEnd(); }
+    sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
+    sub vertexCallback { glVertex3f( @_ ); }
 }
-
-sub pointOnQuadBezier
-{
-    my ($x1, $y1, $x2, $y2, $x3, $y3, $t) = @_;
-    return pointOnLine(
-               pointOnLine( $x1, $y1, $x2, $y2, $t ),
-               pointOnLine( $x2, $y2, $x3, $y3, $t ),
-               $t
-           );
-}
-
-sub beginCallback  { glBegin( $_[0] ); }
-sub endCallback    { glEnd(); }
-sub errorCallback  { print gluErrorString($_[0]),"\n"; quit(); }
-sub vertexCallback { glVertex3f( @_ ); }
 
 sub display 
 {
     state $iter = 0;
+    state $ti = 0;
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
     #glRectf(0.0,0.0,100.0,100.0);
 
     # random
-    #$glyph = $face->glyph_from_char( ('A'..'Z')[rand(26)] ) if ($iter % 20 == 1);
+    $glyph = $face->glyph_from_char( $TEXT[ rand($#TEXT) ] ) if ($iter % 10 == 1);
 
     my $px, $py, $parts, $step;
     $parts = 5.0;
 
     my @contour;
     my $ncts = -1;
+
+    glPushMatrix();
+    glRotatef($rx, 1.0, 0.0, 0.0);
+    glRotatef($ry, 0.0, 1.0, 0.0);
+    glRotatef($rz, 0.0, 0.0, 1.0);
 
     glColor3f(1.0, 1.0, 1.0);
     $glyph->outline_decompose(
@@ -103,26 +96,31 @@ sub display
     );
 
 
-    gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3f );
-    #gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback);
-    gluTessCallback($tobj, GLU_TESS_BEGIN,  \&beginCallback);
-    gluTessCallback($tobj, GLU_TESS_END,    \&endCallback);
-    gluTessCallback($tobj, GLU_TESS_ERROR,  \&errorCallback);
+    # gluTessCallback($tobj, GLU_TESS_VERTEX, \&glVertex3f );
+    # #gluTessCallback($tobj, GLU_TESS_VERTEX, \&vertexCallback);
+    # gluTessCallback($tobj, GLU_TESS_BEGIN,  \&beginCallback);
+    # gluTessCallback($tobj, GLU_TESS_END,    \&endCallback);
+    # gluTessCallback($tobj, GLU_TESS_ERROR,  \&errorCallback);
+
+    gluTessCallback($tobj, GLU_TESS_BEGIN,     'DEFAULT');
+    gluTessCallback($tobj, GLU_TESS_END,       'DEFAULT');
+    gluTessCallback($tobj, GLU_TESS_VERTEX,    'DEFAULT');
+    gluTessCallback($tobj, GLU_TESS_COMBINE,   'DEFAULT');
+    gluTessCallback($tobj, GLU_TESS_ERROR,     'DEFAULT');
+    gluTessCallback($tobj, GLU_TESS_EDGE_FLAG, 'DEFAULT');
 
     gluTessBeginPolygon($tobj, NULL);
 
-    my $ci, $ei;
-    for ($ci = 0; $ci <= $ncts; $ci++ )
+    my $out;
+    foreach $out ( @contour )
     {
         gluTessBeginContour($tobj);
-        for ($ei = 0; $ei <= $#{$contour[$ci]}; $ei++)
-        {
-            gluTessVertex_p($tobj, $contour[$ci]->[$ei][0], $contour[$ci]->[$ei][1], 0.0 );
-        }
+        grep { gluTessVertex_p($tobj, @$_, 0.0 ) } @$out;
         gluTessEndContour($tobj);
-    }    
+    }
     gluTessEndPolygon($tobj);
 
+    glPopMatrix();
     $iter++;
     glutSwapBuffers();
 }
@@ -170,7 +168,13 @@ sub hitkey
     our $WinID;
     my $k = lc(chr(shift));
 
-    if ( $k eq 'q') { glutDestroyWindow( $WinID ) }
+    if ( $k eq 'q') { quit() }
+    if ( $k eq 'w') { $rx+=10.0 }
+    if ( $k eq 's') { $rx-=10.0 }
+    if ( $k eq 'a') { $ry-=10.0 }
+    if ( $k eq 'd') { $ry+=10.0 }
+    if ( $k eq 'j') { $rz+=10.0 }
+    if ( $k eq 'k') { $rz-=10.0 }
 }
 
 sub quit
@@ -192,4 +196,27 @@ sub main
     glutKeyboardFunc(\&hitkey);
     glutIdleFunc(\&idle);
     glutMainLoop();
+}
+
+BEZIER_FUNCTION:
+{
+    sub pointOnLine
+    {
+        my ($x1, $y1, $x2, $y2, $t) = @_;
+        return (
+            ($x2-$x1)*$t + $x1, 
+            ($y2-$y1)*$t + $y1 
+        );
+    }
+
+    sub pointOnQuadBezier
+    {
+        my ($x1, $y1, $x2, $y2, $x3, $y3, $t) = @_;
+        return pointOnLine(
+                   pointOnLine( $x1, $y1, $x2, $y2, $t ),
+                   pointOnLine( $x2, $y2, $x3, $y3, $t ),
+                   $t
+               );
+    }
+
 }
