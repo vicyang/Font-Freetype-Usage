@@ -12,6 +12,8 @@
     如果读取msyh.ttf所有字符轮廓数据，并转为数组，会导致爆内存。
   * tab v0.3
     解决爆内存问题
+* Show_String_Colorful.pl  
+  ![pic](https://github.com/vicyang/Font-Freetype-Usage/blob/master/GL_Render/colorful.png)
 
 * 参考
   [汉字 Unicode 编码范围](http://www.qqxiuzi.cn/zh/hanzi-unicode-bianma.php)
