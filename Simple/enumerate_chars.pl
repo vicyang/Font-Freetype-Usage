@@ -4,7 +4,7 @@ use File::Slurp;
 use File::Basename qw/basename/;
 
 my $buff = "";
-my $ft = "trebuc";
+my $ft = "msyh";
 my $filename = "C:/Windows/Fonts/${ft}.ttf";
 my $face = Font::FreeType->new->face($filename);
 my $iter = 0;
